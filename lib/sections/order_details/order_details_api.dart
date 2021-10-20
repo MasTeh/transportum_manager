@@ -25,4 +25,18 @@ class OrderDetailsApi {
 
     return completer.future;
   }
+
+  Future<dynamic> removeOrder(int orderId) {
+    Completer completer = Completer();
+
+    TransportumSocket().query(SocketQuery('remove_item')
+      .addParam('owner', 'orders')
+      .addParam('item_id', orderId),
+        callback: (dynamic response) {      
+        completer.complete(response);
+
+    });
+
+    return completer.future;
+  }
 }

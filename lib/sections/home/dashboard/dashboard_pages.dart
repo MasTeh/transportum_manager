@@ -40,6 +40,7 @@ class _DashBoardPagesState extends State<DashBoardPages> implements ActivePage {
   var currentPageValue = 0.0;
 
   bool isLoading = true;
+  bool silent = false;
 
   final List<Widget> pages = [];
 
@@ -51,6 +52,13 @@ class _DashBoardPagesState extends State<DashBoardPages> implements ActivePage {
     AppData()
         .changeListener
         .setListener(changeListenerName, this.onChangeListener);
+
+    AppData().changeListener.setListener(ChangesListeners.dashboardPageUpdate,
+        () {
+      silent = true;
+      reloadPages();
+      
+    });
   }
 
   @override
@@ -159,8 +167,6 @@ class _DashBoardPagesState extends State<DashBoardPages> implements ActivePage {
               _opacity = _diff;
             else
               _opacity = _diff * (-1);
-
-            
 
             if (_opacity > 1) _opacity = 1;
             if (position == currentPageValue.floor()) {

@@ -1,7 +1,10 @@
+import 'package:transportumformanager/model/order.dart';
+
 class InsideBuffers {
   static const String dashboardPageIndex = "dashboardPageIndex";
   static const String dashboardDate = "dashboardDate";
   static const String dashboardSyncDate = "dashboardSyncDate";
+  static const String currentOpenedOrder = "currentOpenedOrder";
 }
 
 class _InsideBufferFlags {
@@ -18,8 +21,10 @@ class InsideBuffer {
 
   final Map<String, dynamic> _bufferMap = {};
   final Map<String, _InsideBufferFlags> _bufferFlags = {};
+  OrderModel currentOpenedOrder;
 
-  List<DateTime> dashboardDateSync = []; // отдельно список дат на главном экране для синхронизации
+  List<DateTime> dashboardDateSync =
+      []; // отдельно список дат на главном экране для синхронизации
 
   void put(String name, dynamic value,
       {bool notclearFlag = false, bool notIfExist = false}) {

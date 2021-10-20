@@ -20,6 +20,7 @@ class DateTimeInput extends StatefulWidget {
   final BuildContext context;
   final DateTime minDateTime;
   final DateTime maxDateTime;
+  final DateTime initialDateTime;
 
   DateTimeInput(
       {Key key,
@@ -35,7 +36,8 @@ class DateTimeInput extends StatefulWidget {
       this.maxDateTime,
       this.minDateTime,
       this.controllerForLabel,
-      this.controllerForTime})
+      this.controllerForTime,
+      this.initialDateTime})
       : super(key: key);
 
   @override
@@ -46,6 +48,7 @@ class _DateTimeInputState extends State<DateTimeInput> {
   TextEditingController dateForWebController;
   TextEditingController dateForLabelController;
   TextEditingController timeController;
+  bool manualChanged = false;
 
   @override
   void initState() {
@@ -55,12 +58,17 @@ class _DateTimeInputState extends State<DateTimeInput> {
     timeController = widget.controllerForTime;
   }
 
-  void setDate(dateResult) {
+  void setDate(dateResult, {bool isManual = false}) {
+    
     dateForWebController.text = DateFormat('yyyy-MM-dd').format(dateResult);
     timeController.text = DateFormat('HH:mm').format(dateResult);
     dateForLabelController.text = DateFormat.yMMMMd('ru').format(dateResult) +
         ' время ' +
         timeController.text;
+
+    this.manualChanged = isManual;
+
+
     setState(() {});
   }
 
@@ -70,6 +78,11 @@ class _DateTimeInputState extends State<DateTimeInput> {
     DateTime currentDate;
     if (dateForWebController.text.isNotEmpty)
       currentDate = DateTime.parse(dateForWebController.text);
+
+    if (widget.initialDateTime != null && !manualChanged) {
+      currentDate = widget.initialDateTime;
+      setDate(currentDate, isManual: false);
+    }
 
     return TextFormField(
       autofocus: false,
@@ -97,11 +110,12 @@ class _DateTimeInputState extends State<DateTimeInput> {
             textOK: Text('Да'),
             textCancel: Text('Нет'),
           )) {
-            setDate(dateResult);
-            if (widget.onConfirmChanged != null) widget.onConfirmChanged(dateResult);
+            setDate(dateResult, isManual: true);
+            if (widget.onConfirmChanged != null)
+              widget.onConfirmChanged(dateResult);
           }
         } else {
-          setDate(dateResult);
+          setDate(dateResult, isManual: true);
         }
       },
       decoration: InputDecoration(

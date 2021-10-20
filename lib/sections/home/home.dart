@@ -24,11 +24,11 @@ class HomePage extends StatelessWidget {
 
     return Scaffold(
         appBar: AppBar(title: Text(title), actions: [
-          IconButton(
+          /*IconButton(
               icon: Icon(Icons.person),
               onPressed: () {
                 Navigator.of(context).push(routePage(ProfilePage()));
-              }),
+              }),*/
           IconButton(
               onPressed: () {
                 Navigator.of(context).push(routePage(OrderEdit()));

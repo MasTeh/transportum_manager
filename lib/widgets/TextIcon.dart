@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 class TextIcon extends StatelessWidget {
-  @required final String label;  
-  @required final IconData iconData;
+  @required
+  final String label;
+  @required
+  final IconData iconData;
   final TextStyle textStyle;
   const TextIcon({Key key, this.label, this.textStyle, this.iconData})
       : super(key: key);
@@ -10,14 +12,18 @@ class TextIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var _textStyle = TextStyle(fontSize: 16, color: Colors.black);
-    if (textStyle == null) _textStyle = textStyle;
+    if (textStyle == null)
+      _textStyle = textStyle;
+    else
+      _textStyle = textStyle;
     return RichText(
         text: TextSpan(children: [
       WidgetSpan(
           child: Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: Icon(iconData, color: _textStyle.color, size: (_textStyle.fontSize + 2)),
-          )),
+        padding: const EdgeInsets.only(right: 8),
+        child: Icon(iconData,
+            color: _textStyle.color, size: (_textStyle.fontSize + 2)),
+      )),
       TextSpan(text: label, style: _textStyle)
     ]));
   }

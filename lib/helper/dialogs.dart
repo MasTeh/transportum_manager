@@ -8,7 +8,8 @@ class Dialogs {
   static final runWayType_KM = 0;
   static final runWayType_HOURS = 1;
 
-  static Future<void> showAlert(context, String title, String message) async {
+  static Future<void> showAlert(context, String title, String message,
+      {Function okCallback}) async {
     return showDialog<void>(
       context: context,
       barrierDismissible: false, // user must tap button!
@@ -30,6 +31,7 @@ class Dialogs {
               ),
               onPressed: () {
                 Navigator.of(context).pop();
+                if (okCallback != null) okCallback();
               },
             ),
           ],
@@ -74,6 +76,38 @@ class Dialogs {
             ],
           ),
         ));
+      },
+    );
+  }
+
+  static Future<void> confirmDialog(context, String title, String message,
+      {Function okCallback}) async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Row(children: [Text(title)]),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text(message),
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: Text(
+                'Понятно',
+                style: TextStyle(fontSize: 16, fontFamily: "Monserat"),
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+                if (okCallback != null) okCallback();
+              },
+            ),
+          ],
+        );
       },
     );
   }
@@ -221,7 +255,8 @@ class Dialogs {
       DateTime currentDateTime,
       Function onchanged}) {
     DateTime _now = DateTime.now();
-    if (currentDateTime == null) currentDateTime = DateTime(_now.year, _now.month, _now.day, 12, 0);
+    if (currentDateTime == null)
+      currentDateTime = DateTime(_now.year, _now.month, _now.day, 12, 0);
 
     Completer completer = Completer();
     DatePicker.showDateTimePicker(context,

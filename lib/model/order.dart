@@ -1,5 +1,9 @@
+import 'dart:developer';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
+import 'package:logger/logger.dart';
 import 'package:transportumformanager/entity/contact.dart';
 import 'package:transportumformanager/helper/month_names.dart';
 import 'package:transportumformanager/helper/remove_decimal_zero.dart';
@@ -67,6 +71,9 @@ class OrderModel {
   final String companyName;
   final String addressFromShort;
   final String addressFromLong;
+  final String addressFrom2;
+  final String addressFrom3;
+  final String addressFrom4;
   final String addressDestShort;
   final String addressDestLong;
   final String coordsFrom;
@@ -86,6 +93,7 @@ class OrderModel {
   final double hours;
   final double hoursForDriver;
   final int pieces;
+  final int orderNum;
 
   const OrderModel(
       this.id,
@@ -104,6 +112,9 @@ class OrderModel {
       this.companyName,
       this.addressFromShort,
       this.addressFromLong,
+      this.addressFrom2,
+      this.addressFrom3,
+      this.addressFrom4,
       this.addressDestShort,
       this.addressDestLong,
       this.coordsFrom,
@@ -122,7 +133,8 @@ class OrderModel {
       this.orderCash,
       this.hours,
       this.hoursForDriver,
-      this.pieces);
+      this.pieces,
+      this.orderNum);
 
   factory OrderModel.fromJSON(dynamic jsonData) {
     bool _trailerFlag = false;
@@ -151,12 +163,12 @@ class OrderModel {
     var _unloadContact3 = OrderContact.build(
         jsonData['unload_phone3'] as String, jsonData['contact3_unload']);
 
-    double _priceSummary = double.parse(jsonData['order_price'].toString());
-    double _priceSeller = double.parse(jsonData['seller_price'].toString());
-    double _pricePerHour = double.parse(jsonData['hour_price'].toString());
-    double _hours = double.parse(jsonData['hours'].toString());
+    double _priceSummary = double.parse(jsonData['order_price'].toString() ?? "0");
+    double _priceSeller = double.parse(jsonData['seller_price'].toString() ?? "0");
+    double _pricePerHour = double.parse(jsonData['hour_price'].toString() ?? "0");
+    double _hours = double.parse(jsonData['hours'].toString() ?? "0");
 
-    double _hoursForDriver = double.parse(jsonData['hours2'].toString());
+    double _hoursForDriver = double.parse(jsonData['hours2'].toString() ?? "0");
 
     var _payMethod = OrderPayMethod.hours;
     var _orderNds = OrderNds.withNds;
@@ -175,28 +187,48 @@ class OrderModel {
       _orderNds = OrderNds.withoutNds;
       _orderCash = OrderCash.cash;
     }
+    var log = Logger();
+
+    DateTime _orderDate = DateTime.parse(jsonData['flutterdate'].toString());
+
+    String _time = jsonData['time'] as String;
+
+    /*try {
+      var _timesplited = _time.split(':');
+      _orderDate = DateTime(
+          _orderDate.year,
+          _orderDate.month,
+          _orderDate.day,
+          int.parse(_timesplited[0].toString()),
+          int.parse(_timesplited[1].toString()));
+    } catch (err) {
+      print("OrderModel datetime parsing ERROR!!!");
+    }*/
 
     return OrderModel(
         jsonData['id'] as int,
         jsonData['transport_id'] as int,
         jsonData['driver_id'] as int,
-        DateTime.parse(jsonData['date_web'].toString()),
-        jsonData['time'] as String,
-        jsonData['number'] as String,
+        _orderDate,
+        _time,
+        "", // car number устарело
         _trailerFlag,
-        jsonData['cargo_desc'] as String,
-        jsonData['cargo_type'] as String,
+        jsonData['cargo_desc'] as String ?? "",
+        jsonData['cargo_type'] as String ?? "",
         _status,
         jsonData['manager_id'] as int,
-        jsonData['manager_login'] as String,
+        jsonData['manager_login'] as String ?? "n/a",
         jsonData['company_id'] as int,
-        jsonData['company_name'] as String,
-        jsonData['load_address_short'] as String,
-        jsonData['load_address'] as String,
-        jsonData['unload_address_short'] as String,
-        jsonData['unload_address'] as String,
-        jsonData['load_address_coords'] as String,
-        jsonData['unload_address_coords'] as String,
+        jsonData['company_name'] as String ?? "", // company name устарело
+        jsonData['load_address_short'] as String ?? "",
+        jsonData['load_address'] as String ?? "",
+        jsonData['load_address2'] as String ?? "",
+        jsonData['load_address3'] as String ?? "",
+        jsonData['load_address4'] as String ?? "",
+        jsonData['unload_address_short'] as String ?? "",
+        jsonData['unload_address'] as String ?? "",
+        jsonData['load_address_coords'] as String ?? "",
+        jsonData['unload_address_coords'] as String ?? "",
         _loadContact1,
         _loadContact2,
         _loadContact3,
@@ -211,7 +243,62 @@ class OrderModel {
         _orderCash,
         _hours,
         _hoursForDriver,
-        _pieces);
+        _pieces,
+        jsonData['order_num'] as int);
+  }
+
+  dynamic toJSON({bool withUpdateId = false}) {
+    Map<String, dynamic> json = {};
+
+    if (withUpdateId) json['is_update'] = id;
+
+    json['transport_id'] = this.trandportId;
+    json['driver_id'] = this.driverId;
+    json['manager_id'] = this.managerId;
+    json['date'] = DateFormat('yyyy-MM-dd').format(this.date);
+    json['time'] = this.time ?? "00:00";
+    json['trailer'] = this.getTrailerLabelLong();
+    json['cargo_desc'] = this.cargoDesc;
+    json['cargo_type'] = this.cargoType;
+    json['company_id'] = this.companyId;
+    json['load_address_short'] = this.addressFromShort;
+    json['load_address'] = this.addressFromLong;
+    json['load_address2'] = this.addressFrom2 ?? "";
+    json['load_address3'] = this.addressFrom3 ?? "";
+    json['load_address4'] = this.addressFrom4 ?? "";
+    json['unload_address_short'] = this.addressDestShort ?? "";
+    json['unload_address'] = this.addressDestLong ?? "";
+    json['load_address_coords'] = this.coordsFrom ?? "";
+    json['unload_address_coords'] = this.coordsDest ?? "";
+    json['load_phone'] = this.loadContact1.phone ?? "";
+    json['load_phone2'] = this.loadContact2.phone ?? "";
+    json['load_phone3'] = this.loadContact3.phone ?? "";
+    json['contact'] = this.loadContact1.name ?? "";
+    json['contact2'] = this.loadContact2.name ?? "";
+    json['contact3'] = this.loadContact3.name ?? "";
+    json['unload_phone'] = this.unloadContact1.phone ?? "";
+    json['unload_phone2'] = this.unloadContact2.phone ?? "";
+    json['unload_phone3'] = this.unloadContact3.phone ?? "";
+    json['contact_unload'] = this.unloadContact1.name ?? "";
+    json['contact2_unload'] = this.unloadContact2.name ?? "";
+    json['contact3_unload'] = this.unloadContact3.name ?? "";
+    json['nds'] = this.getCashAndNdsLabel();
+    json['pieces'] = this.pieces ?? 0;
+    json['order_price'] = this.priceSummary ?? 0;
+    json['seller_price'] = this.priceSeller ?? 0;
+    json['hour_price'] = this.pricePerHour ?? 0;
+    json['hours'] = this.hours ?? 0;
+    json['hours2'] = this.hoursForDriver ?? 0;
+    json['order_num'] = this.orderNum;
+
+    return json;
+  }
+
+  String getPaymentMethodLabel() {
+    if (orderNds == OrderNds.withNds) return "Безнал с НДС";
+    if (orderNds == OrderNds.withoutNds && orderCash == OrderCash.bank)
+      return "Безнал без НДС";
+    if (orderCash == OrderCash.cash) return "Наличный";
   }
 
   String getPriceSummary() {

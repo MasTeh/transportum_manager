@@ -1,12 +1,13 @@
 import 'dart:async';
 
 class ChangesListeners {
-  static String ordersList = "ordersList";
-  static String mainScreen = "mainScreen";
-  static String orderDetails = "orderDetails";
-  static String dashboardPageChanged = "dashboardPageChanged";
-  static String dashboardDateChanged = "dashboardDateChanged";
-  static String dashboardLoadNewStack = "dashboardLoadNewStack";
+  static const String ordersList = "ordersList";
+  static const String mainScreen = "mainScreen";
+  static const String orderDetails = "orderDetails";
+  static const String dashboardPageChanged = "dashboardPageChanged";
+  static const String dashboardDateChanged = "dashboardDateChanged";
+  static const String dashboardLoadNewStack = "dashboardLoadNewStack";
+  static const String dashboardPageUpdate = "dashboardPageUpdate";
 }
 
 class ChangesListener {

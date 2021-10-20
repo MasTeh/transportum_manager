@@ -71,6 +71,7 @@ class _DashBoardHeaderState extends State<DashBoardHeader>
     this.initChangeListener();
 
     _dateTime = DateTime.now();
+    _dateTime = DateTime(_dateTime.year, _dateTime.month, _dateTime.day, 9, 0);
     weekDay = WeekdaysLong.names[_dateTime.weekday];
 
     InsideBuffer()

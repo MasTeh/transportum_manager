@@ -115,6 +115,13 @@ class AppStorage {
     return companies[companyId];
   }
 
+  Company getCompanySafe(int companyId) {
+    if (!companies.containsKey(companyId)) 
+      return null;
+    else
+      return companies[companyId];
+  }
+
   // Company block end
 
   // Managers block start
@@ -131,7 +138,7 @@ class AppStorage {
   }
 
   UserManager getManager(int managerId) {
-    if (!companies.containsKey(managerId))
+    if (!managers.containsKey(managerId))
       throw "Manager ID=$managerId not found";
 
     return managers[managerId];
@@ -139,7 +146,7 @@ class AppStorage {
 
   UserManager getManagerSafe(int managerId) {
     try {
-      if (!companies.containsKey(managerId)) return null;
+      if (!managers.containsKey(managerId)) return null;
       return managers[managerId];
     } catch (err) {
       return null;

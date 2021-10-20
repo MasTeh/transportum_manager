@@ -5,18 +5,26 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:transportumformanager/global/ChangesListener.dart';
+import 'package:transportumformanager/global/InsideBuffer.dart';
+import 'package:transportumformanager/global/appstorage/AppStorage.dart';
 import 'package:transportumformanager/helper/remove_decimal_zero.dart';
+import 'package:transportumformanager/helper/routes.dart';
+import 'package:transportumformanager/helper/toast.dart';
 import 'package:transportumformanager/model/order.dart';
+import 'package:transportumformanager/model/photo.dart';
 import 'package:transportumformanager/model/transport.dart';
 import 'package:transportumformanager/model/user_driver.dart';
+import 'package:transportumformanager/profile.dart';
 import 'package:transportumformanager/sections/app_data/app_data.dart';
 import 'package:transportumformanager/helper/app_functions.dart';
 import 'package:transportumformanager/helper/preloader.dart';
 import 'package:transportumformanager/network/query.dart';
 import 'package:transportumformanager/sections/order_details/order_details_api.dart';
+import 'package:transportumformanager/sections/order_edit/order_edit.dart';
 import 'package:transportumformanager/widgets/TextIcon.dart';
 import 'package:transportumformanager/widgets/blink_label.dart';
 import 'package:transportumformanager/helper/dialogs.dart';
+import 'package:transportumformanager/widgets/photo_gallery.dart';
 import 'package:transportumformanager/widgets/preloaders.dart';
 import 'package:transportumformanager/network/socket.dart';
 import 'package:transportumformanager/widgets/FlatIconButton.dart';
@@ -45,14 +53,53 @@ class OrderDetails extends StatelessWidget {
     return Scaffold(
         appBar: AppBar(
           title: Text(this.title),
-          actions: [            
+          actions: [
             PopupMenuButton(
-              itemBuilder: (BuildContext context) {
+              itemBuilder: (BuildContext itemContext) {
                 return [
-                  PopupMenuItem(                    
-                      child: TextIcon(iconData: Icons.edit, label: "Редактировать", textStyle: TextStyle(fontSize: 15))),
-                  PopupMenuItem(                    
-                      child: TextIcon(iconData: Icons.copy, label: "Дублировать", textStyle: TextStyle(fontSize: 15))),
+                  PopupMenuItem(
+                      child: TextButton.icon(
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (itemContext) => OrderEdit(
+                                      orderId: orderId,
+                                      editMode: OrderEditMode.edit)),
+                            );
+                          },
+                          icon: Icon(Icons.edit),
+                          label: Text("Редактировать"))),
+                  PopupMenuItem(
+                      child: TextButton.icon(
+                          onPressed: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (itemContext) => OrderEdit(
+                                      orderId: orderId,
+                                      editMode: OrderEditMode.dublicate)),
+                            );
+                          },
+                          icon: Icon(Icons.copy),
+                          label: Text("Дублировать"))),
+                  PopupMenuItem(
+                      child: TextButton.icon(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            confirm(context,
+                                    content: Text(
+                                        "Удалить заявку? Это необратимое действие."),
+                                    title: Text("Точно?"))
+                                .then((ok) {
+                              if (ok) {
+                                OrderDetailsApi().removeOrder(orderId);
+                                Navigator.pop(context);
+                              }
+                            });
+                          },
+                          icon: Icon(Icons.delete),
+                          label: Text("Удалить"))),
                 ];
               },
             )
@@ -77,8 +124,6 @@ class _OrderDetailsBodyState extends State<OrderDetailsBody> {
       padding: EdgeInsets.fromLTRB(10, 0, 10, 0),
       child: Divider(color: Colors.grey, height: 2));
   bool isLoading = true;
-
-  DateTime today = DateTime.now();
 
   OrderModel currOrder;
   UserDriver currDriver;
@@ -115,6 +160,8 @@ class _OrderDetailsBodyState extends State<OrderDetailsBody> {
       currDriver = UserDriver.fromJSON(orderJSON['driver']);
       currTransport = Transport.fromJSON(orderJSON['transport']);
 
+      InsideBuffer().currentOpenedOrder = currOrder;
+
       specialFormattedDateTime = orderJSON['date_label3'];
 
       isLoading = false;
@@ -134,8 +181,6 @@ class _OrderDetailsBodyState extends State<OrderDetailsBody> {
   dynamic pickImageError;
   String retrieveDataError;
 
-  final ImagePicker _picker = ImagePicker();
-
   void loadImages() {
     imagesUrls.clear();
     SocketQuery query = SocketQuery('get_photos')
@@ -152,168 +197,6 @@ class _OrderDetailsBodyState extends State<OrderDetailsBody> {
 
       setState(() {});
     });
-  }
-
-  void onImageButtonPressed(ImageSource source) async {
-    try {
-      final pickedFile = await _picker.getImage(
-        source: source,
-        maxWidth: 1200,
-        maxHeight: 1200,
-        imageQuality: 80,
-      );
-
-      uploadImage(pickedFile);
-
-      setState(() {});
-    } catch (e) {
-      setState(() {
-        pickImageError = e;
-      });
-    }
-  }
-
-  void uploadImage(PickedFile pickedFile) async {
-    final bytes = await pickedFile.readAsBytes();
-
-    SocketQuery query = SocketQuery('add_photo')
-        .addParam('item_id', "${widget.orderId}")
-        .addParam('owner', 'orders')
-        .addParam('base64data', base64.encode(bytes));
-
-    imagesUrls.clear();
-    bigImagesUrls.clear();
-    imagesIds.clear();
-    imagesUrls.add("loading");
-    bigImagesUrls.add("loading");
-    imagesIds.add("loading");
-
-    setState(() {});
-
-    TransportumSocket().query(query, callback: (response) {
-      loadImages();
-    });
-  }
-
-  Future<void> removePhoto(index) {
-    imagesIds.removeAt(index);
-    imagesUrls.removeAt(index);
-    bigImagesUrls.removeAt(index);
-    setState(() {});
-    Completer completer = Completer();
-
-    SocketQuery query =
-        SocketQuery('remove_photo').addParam('photo_id', imagesIds[index]);
-
-    TransportumSocket().query(query, callback: () {
-      completer.complete();
-    });
-
-    return completer.future;
-  }
-
-  bool isOrderNotToday() {
-    DateTime expireDate = currOrder.date.add(Duration(hours: 16));
-    return (today.isAfter(expireDate));
-  }
-
-  void removeGalleryPhoto(context, index) async {
-    if (isOrderNotToday()) {
-      Dialogs.showAlert(context, "Ограничение",
-          "Нельзя удалить фото по прошествию 24 часов после заявки");
-      return;
-    }
-
-    if (await confirm(
-      context,
-      title: Text('Удалить фото?'),
-      content: Text('Точно?'),
-      textOK: Text('Да'),
-      textCancel: Text('Нет'),
-    )) {
-      Navigator.of(context).pop();
-      await removePhoto(index);
-      loadImages();
-    }
-  }
-
-  Widget buildImageList(BuildContext context, {bool isNetwork = false}) {
-    if (imagesUrls.length == 0) return Container();
-
-    List<Widget> _items = [];
-    imagesUrls.asMap().forEach((index, url) {
-      if (url == 'loading') {
-        _items.add(Container(
-            padding: EdgeInsets.all(30),
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: Colors.grey, width: 3)),
-            child: CircularProgressIndicator(
-              value: null,
-              strokeWidth: 2.0,
-            )));
-      } else {
-        _items.add(
-          GestureDetector(
-            onTap: () {
-              AppFunctions.openGalleryView(context, bigImagesUrls,
-                  initialPage: index, removeFunction: () {
-                removeGalleryPhoto(context, index);
-              });
-            },
-            child: Container(
-                child: Image.network(url, fit: BoxFit.fitWidth, loadingBuilder:
-                    (BuildContext context, Widget child,
-                        ImageChunkEvent loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Center(
-                    child: CircularProgressIndicator(
-                      value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded /
-                              loadingProgress.expectedTotalBytes
-                          : null,
-                    ),
-                  );
-                }),
-                padding: EdgeInsets.all(5)),
-          ),
-        );
-      }
-    });
-
-    return SingleChildScrollView(
-      child: Column(
-        children: [
-          GridView.count(
-              crossAxisCount: 4,
-              children: _items,
-              shrinkWrap: true,
-              physics: BouncingScrollPhysics())
-        ],
-      ),
-    );
-  }
-
-  Widget buildPhotoWidget(BuildContext context) {
-    Widget imageListWidget = Container();
-
-    if (imagesUrls.length > 0) {
-      imageListWidget = buildImageList(context);
-    }
-
-    return Container(
-      padding: EdgeInsets.all(10),
-      child: Column(children: [
-        TextButton.icon(
-            onPressed: () async {
-              onImageButtonPressed(ImageSource.camera);
-            },
-            icon: Icon(Icons.photo_camera),
-            label: Text("Добавить фото")),
-        imageListWidget
-      ]),
-    );
   }
 
   @override
@@ -646,11 +529,22 @@ class _OrderDetailsBodyState extends State<OrderDetailsBody> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(currTransport.number,
-                                style: TextStyle(
-                                    fontSize: 18,
-                                    fontFamily: "Monserat",
-                                    color: Colors.black)),
+                            Row(
+                              children: [
+                                Text(currTransport.number,
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontFamily: "Monserat",
+                                        color: Colors.black)),
+                                currOrder.haveTrailer
+                                    ? Text(currOrder.getTrailerLabelShort(),
+                                        style: TextStyle(
+                                            fontSize: 18,
+                                            fontFamily: "Monserat",
+                                            color: Colors.black))
+                                    : Text("")
+                              ],
+                            ),
                             Text(currTransport.modelName,
                                 style: TextStyle(
                                     fontSize: 16,
@@ -661,7 +555,7 @@ class _OrderDetailsBodyState extends State<OrderDetailsBody> {
                   ),
                   Container(
                       padding: EdgeInsets.only(left: 20),
-                      width: 180,
+                      width: 150,
                       child: Text(currDriver.firstLastName(),
                           style: TextStyle(
                               fontSize: 15,
@@ -690,6 +584,9 @@ class _OrderDetailsBodyState extends State<OrderDetailsBody> {
 
           // блок цен и часов
           hoursAndPricesBlock2,
+
+          // фотки
+          PhotoGallery(owner: PhotoOwner.orders, itemId: currOrder.id),
 
           Padding(
               padding: EdgeInsets.all(10),

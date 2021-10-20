@@ -13,12 +13,12 @@ class FormEditDayPiece extends StatelessWidget {
     List<S2Choice<String>> _resultItems = [];
     _resultItems.add(S2Choice<String>(title: "не указано", value: "-1"));
 
-    _resultItems.add(S2Choice<String>(value: '1', title: '1 - Первая'));
-    _resultItems.add(S2Choice<String>(value: '2', title: '2 - Вторая'));
-    _resultItems.add(S2Choice<String>(value: '3', title: '3 - Третья'));
-    _resultItems.add(S2Choice<String>(value: '4', title: '4 - Четвертая'));
-    _resultItems.add(S2Choice<String>(value: '5', title: '5 - Пятая'));
-    _resultItems.add(S2Choice<String>(value: '6', title: '6 - Шестая'));
+    _resultItems.add(S2Choice<String>(value: '0', title: '1 - Первая'));
+    _resultItems.add(S2Choice<String>(value: '1', title: '2 - Вторая'));
+    _resultItems.add(S2Choice<String>(value: '2', title: '3 - Третья'));
+    _resultItems.add(S2Choice<String>(value: '3', title: '4 - Четвертая'));
+    _resultItems.add(S2Choice<String>(value: '4', title: '5 - Пятая'));
+    _resultItems.add(S2Choice<String>(value: '5', title: '6 - Шестая'));
 
     return _resultItems;
   }

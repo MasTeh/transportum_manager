@@ -70,6 +70,10 @@ class TransportumSocket {
         log.i(msgJSON);
 
         String action = msgJSON["action"];
+
+        if (action == "update_desk") {
+          AppData().changeListener.emitt(ChangesListeners.dashboardPageUpdate);
+        }
       }
 
       if (type == "query_send") {
@@ -115,7 +119,6 @@ class TransportumSocket {
               jsonObject = errorResult;
             }
           }
-          
 
           _queryStack[qid](jsonObject);
         }
